@@ -1,10 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35617.110 d17.13
+VisualStudioVersion = 17.13.35617.110
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Respondia.WEB", "Respondia.WEB\Respondia.WEB.csproj", "{B9AE553D-5773-457C-B76F-389FC1CED7EE}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Respondia.Tests", "Respondia.Tests\Respondia.Tests.csproj", "{11290395-01AB-4F0C-91D5-D45F1FFF3FA6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Respondia.Core", "Respondia.Core\Respondia.Core.csproj", "{209E91A6-9100-4E2A-AA01-70423E8B08FE}"
@@ -13,16 +11,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Respondia.DataAccess", "Res
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Respondia.BL", "Respondia.BL\Respondia.BL.csproj", "{68631CFC-713E-4FBD-9201-E9287430DCE0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Respondia.WEB", "Respondia.WEB\Respondia.WEB.csproj", "{F4F59361-E6A0-4858-BE85-E4A633718B43}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B9AE553D-5773-457C-B76F-389FC1CED7EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B9AE553D-5773-457C-B76F-389FC1CED7EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B9AE553D-5773-457C-B76F-389FC1CED7EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B9AE553D-5773-457C-B76F-389FC1CED7EE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{11290395-01AB-4F0C-91D5-D45F1FFF3FA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{11290395-01AB-4F0C-91D5-D45F1FFF3FA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{11290395-01AB-4F0C-91D5-D45F1FFF3FA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -39,6 +35,10 @@ Global
 		{68631CFC-713E-4FBD-9201-E9287430DCE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{68631CFC-713E-4FBD-9201-E9287430DCE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{68631CFC-713E-4FBD-9201-E9287430DCE0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4F59361-E6A0-4858-BE85-E4A633718B43}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4F59361-E6A0-4858-BE85-E4A633718B43}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4F59361-E6A0-4858-BE85-E4A633718B43}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4F59361-E6A0-4858-BE85-E4A633718B43}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
