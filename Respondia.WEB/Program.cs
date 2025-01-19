@@ -15,6 +15,8 @@ using Respondia.Core.Extensions;
 using System.Reflection;
 using Microsoft.Extensions.Caching.Hybrid;
 using System.Threading.RateLimiting;
+using Microsoft.Extensions.Options;
+using Respondia.BL.Services.EmailServices;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +24,13 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Automatic DI register
+builder.Services.AddInjectables(
+    Assembly.GetExecutingAssembly(),
+    typeof(EntryPointCore).Assembly,
+    typeof(EntryPointBusinessLogic).Assembly
+);
 
 // Appsettings.json config
 builder.Configuration
@@ -68,7 +77,18 @@ builder.Services.AddIdentityCore<AppUser>(options => options.SignIn.RequireConfi
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
-builder.Services.AddSingleton<IEmailSender<AppUser>, IdentityNoOpEmailSender>();
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+{
+    options.TokenLifespan = TimeSpan.FromHours(24);
+});
+
+
+//builder.Services.AddTransient<IEmailSender<AppUser>, EmailSenderService>();
+builder.Services.AddTransient<EmailSenderService>();
+builder.Services.AddSingleton<EmailQueueService>();
+builder.Services.AddHostedService<EmailProcessorService>();
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+builder.Services.AddSingleton<SmtpSettings>(sp => sp.GetRequiredService<IOptions<SmtpSettings>>().Value);
 
 // HttpContextAccesor
 builder.Services.AddHttpContextAccessor();
@@ -83,12 +103,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<EntryPointCore>();
 // MiddleWares
 builder.Services.AddScoped<ExceptionMiddleware>();
 
-// Automatic DI register
-builder.Services.AddInjectables(
-    Assembly.GetExecutingAssembly(),
-    typeof(EntryPointCore).Assembly,
-    typeof(EntryPointBusinessLogic).Assembly
-);
+
 
 // Add AutoMapper (.Domain Assembly)
 builder.Services.AddAutoMapper(

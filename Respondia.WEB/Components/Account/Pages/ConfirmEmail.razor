@@ -6,7 +6,9 @@
 @using Respondia.Core.Entities
 
 @inject UserManager<AppUser> UserManager
+@inject SignInManager<AppUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
+@inject ILogger<ConfirmEmail> Logger
 
 <PageTitle>Confirm email</PageTitle>
 
@@ -29,20 +31,49 @@
     {
         if (UserId is null || Code is null)
         {
-            RedirectManager.RedirectTo("");
+            statusMessage = "Invalid confirmation request.";
+            RedirectManager.RedirectTo("/Account/Register");
+            return;
         }
 
         var user = await UserManager.FindByIdAsync(UserId);
         if (user is null)
         {
             HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-            statusMessage = $"Error loading user with ID {UserId}";
+            statusMessage = $"User with ID '{UserId}' could not be found.";
+            return;
         }
-        else
+
+        try
         {
-            var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
-            var result = await UserManager.ConfirmEmailAsync(user, code);
-            statusMessage = result.Succeeded ? "Thank you for confirming your email." : "Error confirming your email.";
+            var decodedCode = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
+            var result = await UserManager.ConfirmEmailAsync(user, decodedCode);
+
+            //if (result.Succeeded)
+            //{
+            //    statusMessage = "Thank you for confirming your email. You can now log in.";
+            //    RedirectManager.RedirectTo("/Account/Login");
+            //}
+            if (result.Succeeded)
+            {
+                statusMessage = "Thank you for confirming your email.";
+                await SignInManager.SignInAsync(user, isPersistent: false);
+                await RedirectAfterRender("");
+            }
+
+            else
+            {
+                statusMessage = "Email confirmation failed. The token may be invalid or expired.";
+            }
         }
+        catch (FormatException)
+        {
+            statusMessage = "Invalid confirmation code format.";
+        }
+    }
+    private async Task RedirectAfterRender(string uri)
+    {
+        await Task.Yield();
+        RedirectManager.RedirectTo(uri);
     }
 }
