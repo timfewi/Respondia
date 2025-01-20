@@ -38,4 +38,8 @@
     <ProjectReference Include="..\Respondia.Tests\Respondia.Tests.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\assets\img\products\" />
+  </ItemGroup>
+
 </Project>

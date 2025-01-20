@@ -1,23 +1,87 @@
 ﻿@inherits LayoutComponentBase
+@using Respondia.Core.DTOs.CampaignDTOs
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
+<nav class="navbar navbar-light bg-light px-3">
+    <div class="container-fluid">
+
+        @if (isAuthenticated)
+        {
+            <button class="btn btn-outline-primary d-lg-none"
+                    type="button"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#offcanvasSidebar"
+                    aria-controls="offcanvasSidebar">
+                <i class="bi bi-list"></i>
+            </button>
+        }
+        else
+        {
+            <NavMenu />
+        }
     </div>
+</nav>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+@if (isAuthenticated)
+{
+    <div class="d-flex" style="min-height: 100vh; margin-top: 56px;">
+        <div class="offcanvas offcanvas-start d-lg-none"
+             tabindex="-1"
+             id="offcanvasSidebar"
+             aria-labelledby="offcanvasSidebarLabel">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title" id="offcanvasSidebarLabel">Sidebar</h5>
+                <button type="button" class="btn-close text-reset"
+                        data-bs-dismiss="offcanvas"
+                        aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body p-0">
+                <NavSidebar />
+            </div>
         </div>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+        <div class="d-none d-lg-block flex-shrink-0 border-end bg-white"
+             style="width: 280px; min-height: 100vh;">
+            <NavSidebar />
+        </div>
 
+        <main class="flex-grow-1 mt-4 ms-4">
+            @Body
+        </main>
+    </div>
+}
+else
+{
+ 
+    <div class="container" style="margin-top: 56px;">
+
+        <main class="mt-4">
+            @Body
+        </main>
+    </div>
+}
+
+<!-- Fehler-Anzeige von Blazor -->
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
     <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
+    <span class="dismiss">✖</span>
 </div>
+@code {
+    private bool isAuthenticated;
+    private CampaignSidebarDTO? SelectedCampaign;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+
+        if (isAuthenticated)
+        {
+            SelectedCampaign = new CampaignSidebarDTO
+            {
+                Id = 1,
+            };
+        }
+    }
+}

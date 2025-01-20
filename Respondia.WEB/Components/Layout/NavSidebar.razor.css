@@ -1,0 +1,8 @@
+
+.btn[data-bs-toggle="collapse"] .bi-chevron-right {
+    transition: transform 0.3s ease;
+}
+
+.btn[data-bs-toggle="collapse"][aria-expanded="true"] .bi-chevron-right {
+    transform: rotate(90deg);
+}
