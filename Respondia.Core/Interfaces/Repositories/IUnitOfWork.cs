@@ -12,6 +12,7 @@ namespace Respondia.Core.Interfaces.Repositories
     public interface IUnitOfWork : IDisposable
     {
         // DI's
+        ICampaignRepository Campaigns { get; }
        
         /// <summary>
         /// Begins a new transaction asynchronously.

@@ -35,7 +35,7 @@ namespace Respondia.DataAccess.Repositories
             return await _dbSet.Where(predicate).ToListAsync();
         }
 
-        public async Task<T?> GetByIdAsync(Guid id)
+        public async Task<T?> GetByIdAsync(int id)
         {
             return await _dbSet.FindAsync(id);
         }

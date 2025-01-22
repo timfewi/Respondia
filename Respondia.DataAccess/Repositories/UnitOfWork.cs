@@ -22,20 +22,22 @@ namespace Respondia.DataAccess.Repositories
         private readonly ILogger<UnitOfWork> _logger;
 
         // DI's
-       
+        public ICampaignRepository Campaigns { get; }
 
         public UnitOfWork(
             AppDbContext context,
-            ILogger<UnitOfWork> logger
+            ILogger<UnitOfWork> logger,
             // Repositories
-           
+            ICampaignRepository campaigns
+
             )
 
         {
             _context = context;
             _logger = logger;
+            Campaigns = campaigns;
             // Repos
-     
+
         }
 
         /// <inheritdoc />
