@@ -1,0 +1,103 @@
+﻿@page "/campaigns/create"
+@attribute [Authorize]
+@inject ICampaignCommandService CampaignCommandSerivce
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserManager<AppUser> UserManager
+@inject ILogger<CampaignCreate> Logger
+
+
+<h3>Create Campaign</h3>
+
+@if (isSubmitting)
+{
+    <p>Submitting data...</p>
+}
+else
+{
+    <EditForm Model="campaignDto" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <InputText id="name" class="form-control" @bind-Value="campaignDto.Name" />
+            <ValidationMessage For="@(() => campaignDto.Name)" />
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <InputTextArea id="description" class="form-control" @bind-Value="campaignDto.Description" />
+            <ValidationMessage For="@(() => campaignDto.Description)" />
+        </div>
+
+        <div class="form-group">
+            <label for="endDate">End Date (optional):</label>
+            <InputDate id="endDate" class="form-control" @bind-Value="campaignDto.EndDate" />
+            <ValidationMessage For="@(() => campaignDto.EndDate)" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Create</button>
+        <button type="button" class="btn btn-secondary" @onclick="CancelCreate">Cancel</button>
+    </EditForm>
+}
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+@code
+{
+    private CampaignCreateDTO campaignDto = new();
+    private bool isSubmitting = false;
+    private string errorMessage = string.Empty;
+
+    private async Task HandleValidSubmit()
+    {
+        isSubmitting = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+
+            int userId = await GetCurrentUserIdAsync();
+            var newCampaignId = await CampaignCommandSerivce.CreateCampaignAsync(campaignDto, userId);
+            NavigationManager.NavigateTo($"/campaigns/{newCampaignId}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An error occurred: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void CancelCreate()
+    {
+        NavigationManager.NavigateTo("/campaigns");
+    }
+
+    private async Task<int> GetCurrentUserIdAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var principal = authState.User;
+
+        var appUser = await UserManager.GetUserAsync(principal);
+        if (appUser != null)
+        {
+            Logger.LogInformation("Authenticated user found: {UserName} with ID {UserId}.", appUser.UserName, appUser.Id);
+            return appUser.Id;
+        }
+        else
+        {
+            Logger.LogWarning("Authenticated user could not be found.");
+        }
+
+        Logger.LogWarning("User is not authenticated. Redirecting to Login.");
+        NavigationManager.NavigateTo("Account/Login");
+        throw new InvalidOperationException("User is not authenticated.");
+    }
+}

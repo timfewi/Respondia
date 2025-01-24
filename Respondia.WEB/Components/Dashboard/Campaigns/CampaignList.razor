@@ -1,0 +1,67 @@
+﻿@page "/campaigns"
+@attribute [Authorize]
+@inject ICampaignQueryService CampaignQueryService
+
+
+<h3>Campaign Overview</h3>
+
+@if (isLoading)
+{
+    <p>Loading Campaigns...</p>
+}
+else if (campaigns == null || !campaigns.Any())
+{
+    <p>No campaigns found.</p>
+    <NavLink href="/campaigns/create" class="btn-link">Create a New Campaign</NavLink>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Campaign Name</th>
+                <th>Description</th>
+                <th>End Date</th>
+                <th>Inactive?</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in campaigns)
+            {
+                <tr>
+                    <td>@c.Name</td>
+                    <td>@c.Description</td>
+                    <td>@c.EndDate?.ToShortDateString()</td>
+                    <td>@c.IsInactive</td>
+                    <td>
+                        <NavLink href="@($"/campaigns/{c.Id}")">View Details</NavLink>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code
+{
+    private string? errorMessage;
+    private bool isLoading = true;
+    private IEnumerable<CampaignListDTO>? campaigns;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            campaigns = await CampaignQueryService.GetCampaignsForOverviewAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

@@ -1,0 +1,89 @@
+﻿@page "/campaigns/{CampaignId:int}"
+@attribute [Authorize]
+@inject ICampaignQueryService CampaignQueryService
+
+
+<h3>Campaign Details</h3>
+
+@if (isLoading)
+{
+    <p>Loading Campaign Details...</p>
+}
+else if (campaign == null)
+{
+    <p>No Campaign found for Id: @CampaignId</p>
+}
+else
+{
+    <div class="card">
+        <div class="card-body">
+            <h4 class="card-title">@campaign.Name</h4>
+            <p class="card-text">@campaign.Description</p>
+            <p><b>End Date:</b> @campaign.EndDate?.ToShortDateString()</p>
+            <p><b>Inactive?</b> @campaign.IsInactive</p>
+        </div>
+    </div>
+
+    @if (campaign.Statistics != null)
+    {
+        <div class="mt-3">
+            <h5>Campaign Statistics</h5>
+            <ul>
+                <li><b>Total Responses:</b> @campaign.Statistics.TotalResponses</li>
+                <li><b>Average Rating:</b> @campaign.Statistics.AverageRating</li>
+                <li><b>Last Updated:</b> @campaign.Statistics.LastUpdated</li>
+            </ul>
+        </div>
+    }
+    else
+    {
+        <p>No statistics available (maybe campaign is new).</p>
+    }
+
+    <h5 class="mt-3">Feedback Forms</h5>
+    @if (campaign.FeedbackForms == null || !campaign.FeedbackForms.Any())
+    {
+        <p>No Feedback Forms available yet.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (var form in campaign.FeedbackForms)
+            {
+                <li>
+                    <b>@form.Name</b>
+                    (ID: @form.Id)
+                    <!-- Hier könntest Du z. B. zu einer FeedbackForm-Details-Seite verlinken -->
+                    <!-- <a href="/feedbackforms/@form.Id">Open Form</a> -->
+                </li>
+            }
+        </ul>
+    }
+}
+
+@code
+{
+    [Parameter]
+    public int CampaignId { get; set; }
+
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    private CampaignDetailsDTO? campaign;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            campaign = await CampaignQueryService.GetCampaignDetailsAsync(CampaignId);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

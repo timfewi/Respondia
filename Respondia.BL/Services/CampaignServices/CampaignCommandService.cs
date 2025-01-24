@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
+using Respondia.Core.Attributes;
 using Respondia.Core.DTOs.CampaignDTOs;
 using Respondia.Core.Entities;
 using Respondia.Core.Exceptions;
@@ -14,6 +15,7 @@ using System.Threading.Tasks;
 
 namespace Respondia.BL.Services.CampaignServices
 {
+    [Injectable(Microsoft.Extensions.DependencyInjection.ServiceLifetime.Scoped)]
     /// <inheritdoc/>
     public class CampaignCommandService : ICampaignCommandService
     {

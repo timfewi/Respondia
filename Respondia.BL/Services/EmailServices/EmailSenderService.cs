@@ -17,7 +17,7 @@ using System.Text.Encodings.Web;
 
 namespace Respondia.BL.Services.EmailServices
 {
-    [Injectable(lifetime: ServiceLifetime.Transient)]
+    //[Injectable(lifetime: ServiceLifetime.Transient)]
     public class EmailSenderService : IEmailSender<AppUser>
     {
         private readonly SmtpSettings _smtpSettings;
