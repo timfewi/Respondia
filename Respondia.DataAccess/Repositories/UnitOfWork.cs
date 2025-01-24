@@ -23,22 +23,22 @@ namespace Respondia.DataAccess.Repositories
 
         // DI's
         public ICampaignRepository Campaigns { get; }
-
+        public IFeedbackRepository Feedbacks { get; }
         public UnitOfWork(
             AppDbContext context,
             ILogger<UnitOfWork> logger,
             // Repositories
-            ICampaignRepository campaigns
-
+            ICampaignRepository campaigns,
+            IFeedbackRepository feedbacks
             )
-
         {
             _context = context;
             _logger = logger;
-            Campaigns = campaigns;
             // Repos
-
+            Campaigns = campaigns;
+            Feedbacks = feedbacks;
         }
+
 
         /// <inheritdoc />
         public async Task BeginTransactionAsync()

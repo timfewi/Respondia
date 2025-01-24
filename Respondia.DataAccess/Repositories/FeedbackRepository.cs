@@ -184,7 +184,7 @@ namespace Respondia.DataAccess.Repositories
 
             try
             {
-                // EF-Core: State auf Modified
+                // EF-Core: State Modified
                 _forms.Update(entity);
             }
             catch (DbUpdateException ex)

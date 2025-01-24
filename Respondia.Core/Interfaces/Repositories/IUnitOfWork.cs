@@ -13,6 +13,7 @@ namespace Respondia.Core.Interfaces.Repositories
     {
         // DI's
         ICampaignRepository Campaigns { get; }
+        IFeedbackRepository Feedbacks { get; }
        
         /// <summary>
         /// Begins a new transaction asynchronously.

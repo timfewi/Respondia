@@ -21,7 +21,7 @@ namespace Respondia.DataAccess.ModelConfigs
                    .IsRequired();
 
             builder.Property(cs => cs.AverageRating)
-                   .HasColumnType("decimal(5, 2)"); // Beispiel für eine Bewertungsskala
+                   .HasColumnType("decimal(5, 2)");
 
             builder.HasOne(cs => cs.Campaign)
                    .WithOne(c => c.Statistics)
