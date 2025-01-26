@@ -1,0 +1,121 @@
+﻿@page "/feedback/{CampaignId:int}/create-form"
+@using System.ComponentModel.DataAnnotations
+@attribute [Authorize]
+@inject IFeedbackCommandService FeedbackCommandService
+@inject IUserService UserService
+@inject ILogger<FeedbackFormCreate> Logger
+@inject NavigationManager NavigationManager
+
+<h3>Create Feedback Form</h3>
+
+@if (!isFormCreated)
+{
+    <EditForm Model="formDTO" OnValidSubmit="HandleCreateForm">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label class="form-label">Name:</label>
+            <InputText @bind-Value="formDTO.Name" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Description:</label>
+            <InputTextArea @bind-Value="formDTO.Description" class="form-control" />
+        </div>
+        <input type="hidden" @bind="formDTO.CampaignId" />
+
+        <button type="submit" class="btn btn-primary mt-2">Create Form</button>
+    </EditForm>
+}
+else
+{
+    <h4>Feedback Form created (ID: @createdFormId)</h4>
+    <p>You can now add questions:</p>
+
+    <div>
+        @foreach (var question in addedQuestions)
+        {
+            <div style="border:1px solid #ccc; margin:5px; padding:5px;">
+                <b>@question.QuestionText</b> (Type: @question.QuestionType)
+            </div>
+        }
+    </div>
+
+    <FeedbackQuestionAdd FormId="@createdFormId"
+                         OnQuestionAdded="@OnQuestionAdded" />
+
+    <div style="margin-top:20px">
+        <button @onclick='() => NavigationManager.NavigateTo($"/feedback/details/{createdFormId}")'>
+            Go to Details
+        </button>
+    </div>
+
+}
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p style="color:#ff0000">@errorMessage</p>
+}
+
+@code {
+
+    [Parameter]
+    public int CampaignId { get; set; }
+
+    private FeedbackFormCreateDTO formDTO = new();
+    private bool isFormCreated = false;
+    private int createdFormId = 0;
+    private string errorMessage = string.Empty;
+
+    private List<FeedbackQuestionDisplayDTO> addedQuestions = new();
+
+    private bool isSaving = false;
+
+    private async Task HandleCreateForm()
+    {
+        isSaving = true;
+        errorMessage = string.Empty;
+        try
+        {
+            var userId = await UserService.GetCurrentUserIdAsync();
+            if (userId == null)
+            {
+                NavigationManager.NavigateTo("/Account/Login", true);
+                return;
+            }
+
+            createdFormId = await FeedbackCommandService.CreateFeedbackFormAsync(formDTO, userId.Value);
+            isFormCreated = true;
+        }
+        catch (ValidationException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        catch (ServiceException ex)
+        {
+            errorMessage = "An unexpected error occurred while creating the new feedback form.";
+            Logger.LogError(ex, "Service exception in {Method}.", nameof(HandleCreateForm));
+        }
+        catch (Exception)
+        {
+            errorMessage = "An unexpected error occurred.";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        formDTO.CampaignId = CampaignId;
+        base.OnParametersSet();
+    }
+
+    private void OnQuestionAdded(FeedbackQuestionDisplayDTO question)
+    {
+        addedQuestions.Add(question);
+        StateHasChanged();
+    }
+
+}

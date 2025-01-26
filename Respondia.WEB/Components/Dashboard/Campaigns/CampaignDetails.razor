@@ -1,7 +1,7 @@
 ﻿@page "/campaigns/{CampaignId:int}"
 @attribute [Authorize]
 @inject ICampaignQueryService CampaignQueryService
-
+@inject NavigationManager NavigationManager
 
 <h3>Campaign Details</h3>
 
@@ -16,11 +16,18 @@ else if (campaign == null)
 else
 {
     <div class="card">
+        <div class="card-header">
+            <button class="btn-btn-primary" @onclick='() => NavigationManager.NavigateTo($"/feedback/{CampaignId}/create-form")'>Create a new Feedback form</button>
+        </div>
         <div class="card-body">
             <h4 class="card-title">@campaign.Name</h4>
             <p class="card-text">@campaign.Description</p>
             <p><b>End Date:</b> @campaign.EndDate?.ToShortDateString()</p>
-            <p><b>Inactive?</b> @campaign.IsInactive</p>
+            <p>
+                <b>State </b><span class="badge @(campaign.IsInactive ? "bg-danger" : "bg-success")">
+                    @(campaign.IsInactive ? "Inactive" : "Active")
+                </span>
+            </p>
         </div>
     </div>
 
@@ -44,6 +51,7 @@ else
     @if (campaign.FeedbackForms == null || !campaign.FeedbackForms.Any())
     {
         <p>No Feedback Forms available yet.</p>
+        <button class="btn btn-primary" @onclick='() => NavigationManager.NavigateTo($"/feedback/{CampaignId}/create-form")'>Create a new Feedback form</button>
     }
     else
     {
@@ -52,9 +60,7 @@ else
             {
                 <li>
                     <b>@form.Name</b>
-                    (ID: @form.Id)
-                    <!-- Hier könntest Du z. B. zu einer FeedbackForm-Details-Seite verlinken -->
-                    <!-- <a href="/feedbackforms/@form.Id">Open Form</a> -->
+                    <button @onclick='() => NavigationManager.NavigateTo($"/feedback/details/{form.Id}")'></button>
                 </li>
             }
         </ul>

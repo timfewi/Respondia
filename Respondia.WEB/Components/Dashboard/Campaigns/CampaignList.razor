@@ -5,6 +5,7 @@
 
 <h3>Campaign Overview</h3>
 
+
 @if (isLoading)
 {
     <p>Loading Campaigns...</p>
@@ -22,7 +23,7 @@ else
                 <th>Campaign Name</th>
                 <th>Description</th>
                 <th>End Date</th>
-                <th>Inactive?</th>
+                <th>State</th>
                 <th></th>
             </tr>
         </thead>
@@ -33,7 +34,11 @@ else
                     <td>@c.Name</td>
                     <td>@c.Description</td>
                     <td>@c.EndDate?.ToShortDateString()</td>
-                    <td>@c.IsInactive</td>
+                    <td>
+                        <span class="badge @(c.IsInactive ? "bg-danger" : "bg-success")">
+                            @(c.IsInactive ? "Inactive" : "Active")
+                        </span>
+                    </td>
                     <td>
                         <NavLink href="@($"/campaigns/{c.Id}")">View Details</NavLink>
                     </td>

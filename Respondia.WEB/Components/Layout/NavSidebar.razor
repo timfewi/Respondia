@@ -3,15 +3,11 @@
 @inject NavigationManager NavigationManager
 
 <AuthorizeView>
-    <!--
-        1) d-flex flex-column: Aktiviert Flexbox in Spaltenrichtung.
-        2) height: 100vh -> passt die Sidebar auf die volle Browser-Höhe an.
-        3) p-3, width: 280px -> deine gewohnte Optik.
-    -->
-    <div class="flex-shrink-0 fixed-top d-flex flex-column p-3 bg-white border-end"
-         style="width: 280px; height: 100vh;">
 
-        <!-- Titel / Logo-Bereich -->
+    <div class="flex-shrink-0 fixed-top d-flex flex-column p-3 bg-white border-end"
+         style="width: 240px; height: 100vh;">
+
+        <!-- Title / Logo-Area -->
         <a href="/" class="d-flex align-items-center pb-3 mb-3 link-body-emphasis text-decoration-none border-bottom">
             <i class="bi pe-none me-2" width="30" height="24">
                 <use xlink:href="#bootstrap"></use>
@@ -19,12 +15,6 @@
             <span class="fs-5 fw-semibold"><i class="bi bi-file-earmark-spreadsheet-fill me-2"></i>Respondia Panel</span>
         </a>
 
-        <!--
-            2) Obere Menüpunkte
-            -> flex-grow-1 (oder mb-auto) sorgt dafür,
-               dass dieser Block sich "nach oben ausdehnt"
-               und der Account-Bereich unten bleibt.
-        -->
         <ul class="list-unstyled ps-0 flex-grow-1">
             <!-- Menu Item 1 -->
             <li class="mb-1">
@@ -75,11 +65,7 @@
             </li>
         </ul>
 
-        <!--
-            3) Account-Bereich
-            -> durch die flex-column & flex-grow-1 oben
-               "wandert" dieser Bereich an den unteren Rand.
-        -->
+        <!-- Account area  -->
         <div class="border-top pt-3">
             <ul class="list-unstyled ps-0">
                 <li class="mb-1">

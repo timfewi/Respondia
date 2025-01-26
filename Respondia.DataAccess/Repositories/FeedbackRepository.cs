@@ -239,6 +239,34 @@ namespace Respondia.DataAccess.Repositories
             }
         }
 
+        /// <inheritdoc/>
+        public async Task<IEnumerable<FeedbackForm>> GetFeedbackFormsByCampaignAsync(int campaignId)
+        {
+            try
+            {
+                var forms = await _forms
+                    .AsNoTracking()
+                    .Include(f => f.Campaign)
+                    .Include(f => f.FeedbackSummery)
+                    .Include(f => f.FeedbackQuestions)
+                    .Where(f => f.CampaignId == campaignId && !f.IsDeleted)
+                    .ToListAsync();
+
+                _logger.LogInformation("Retrieved {Count} FeedbackForms for CampaignId {CampaignId}.", forms.Count, campaignId);
+                return forms;
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Invalid operation in {Method}. CampaignId={CampaignId}", nameof(GetFeedbackFormsByCampaignAsync), campaignId);
+                throw new DataAccessException($"Error retrieving FeedbackForms for CampaignId {campaignId}.", ex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in {Method}: {Message}", nameof(GetFeedbackFormsByCampaignAsync), ex.Message);
+                throw new DataAccessException($"Unexpected error in {nameof(GetFeedbackFormsByCampaignAsync)}.", ex);
+            }
+        }
+
         #region FeedbackQuestions
 
         /// <inheritdoc/>

@@ -1,0 +1,156 @@
+﻿@page "/feedback/details/{FormId:int}"
+@attribute [Authorize]
+@using Newtonsoft.Json
+@inject IFeedbackQueryService FeedbackQueryService
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+@inject ILogger<FeedbackFormDetails> Logger
+
+@if (isLoading)
+{
+    <p>Loading Feedback Form Details...</p>
+}
+else if (feedbackForm == null)
+{
+    <p>No Feedback Form found for ID: @FormId</p>
+}
+else
+{
+    <div class="card mt-2">
+        <div class="card-body">
+            <h4>@feedbackForm.Name</h4>
+            <p>@feedbackForm.Description</p>
+
+            @if (feedbackForm.Summery != null)
+            {
+                <h5>Summery</h5>
+                <p><b>Average Rating:</b> @feedbackForm.Summery.AverageRating</p>
+                <p><b>Total Responses:</b> @feedbackForm.Summery.TotalResponses</p>
+                <!-- weitere Felder... -->
+            }
+            else
+            {
+                <p>No summery available yet.</p>
+            }
+
+            <h5>Questions</h5>
+            @if (feedbackForm.Questions == null || !feedbackForm.Questions.Any())
+            {
+                <p>No questions yet.</p>
+            }
+            else
+            {
+                <ul>
+                    @foreach (var q in feedbackForm.Questions)
+                    {
+                        <li>
+                            <b>@q.QuestionText</b>
+                            (<em>@q.QuestionType</em>)
+
+                            @if (q.QuestionType == Core.Enums.QuestionType.MultipleChoice)
+                            {
+                                <ul>
+                                    @foreach (var option in DeserializeOptions(q.MultipleChoiceOptions))
+                                    {
+                                        <li>@option</li>
+                                    }
+                                </ul>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+
+            <!-- Button zum Hinzufügen weiterer Fragen -->
+            @if (!showAddQuestion)
+            {
+                <button class="btn btn-primary mt-2" @onclick="ToggleAddQuestion">
+                    + Add Another Question
+                </button>
+            }
+            else
+            {
+                <FeedbackQuestionAdd FormId="@FormId"
+                                     OnQuestionAdded="@OnQuestionAdded" />
+
+                <button class="btn btn-outline-secondary mt-2" @onclick="ToggleAddQuestion">
+                    Close
+                </button>
+            }
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p style="color:red">@errorMessage</p>
+}
+
+@code {
+    [Parameter]
+    public int FormId { get; set; }
+
+    private FeedbackFormDetailsDTO? feedbackForm;
+    private bool isLoading = true;
+    private string errorMessage = string.Empty;
+    private bool showAddQuestion = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var userId = await UserService.GetCurrentUserIdAsync();
+            if (userId == null)
+            {
+                NavigationManager.NavigateTo("/Account/Login", true);
+                return;
+            }
+            feedbackForm = await FeedbackQueryService.GetFeedbackFormDetailsAsync(FormId);
+        }
+        catch (ServiceException ex)
+        {
+            errorMessage = "An unexpected error occurred while loading the feedback form details.";
+            Logger.LogError(ex, "Unexpected exception in {Method}.", nameof(OnInitializedAsync));
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private List<string> DeserializeOptions(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return new();
+        try
+        {
+            return JsonConvert.DeserializeObject<List<string>>(json) ?? new List<string>();
+        }
+        catch
+        {
+            return new();
+        }
+    }
+
+    private void ToggleAddQuestion()
+    {
+        showAddQuestion = !showAddQuestion;
+    }
+
+    private void OnQuestionAdded(FeedbackQuestionDisplayDTO newQuestion)
+    {
+        if (feedbackForm?.Questions != null)
+        {
+            feedbackForm.Questions.Add(new FeedbackQuestionDTO
+            {
+                QuestionText = newQuestion.QuestionText,
+                QuestionType = Enum.Parse<QuestionType>(newQuestion.QuestionType),
+                MultipleChoiceOptions = ""
+            });
+
+        }
+
+        StateHasChanged();
+    }
+
+}

@@ -1,0 +1,133 @@
+﻿@*@page "/feedback/{FormId:int}/add-question"*@
+@attribute [Authorize]
+@using Newtonsoft.Json
+@inject IFeedbackCommandService FeedbackCommandService
+@inject NavigationManager NavigationManager
+@inject IUserService UserService
+@inject ILogger<FeedbackQuestionAdd> Logger
+
+<h3>Add a Question</h3>
+
+<EditForm Model="questionDTO" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+        <label>Question Text:</label>
+        <InputText @bind-Value="questionDTO.QuestionText" />
+    </div>
+    <div>
+        <label>Type:</label>
+        <InputSelect class="form-select" @bind-Value="questionDTO.QuestionType">
+            <option value="">-- Select Type --</option>
+            <option value="@QuestionType.Text">Text</option>
+            <option value="@QuestionType.MultipleChoice">MultipleChoice</option>
+            <option value="@QuestionType.Rating">Rating</option>
+            <option value="@QuestionType.YesNo">Yes or No</option>
+        </InputSelect>
+    </div>
+
+    @if (questionDTO.QuestionType == QuestionType.MultipleChoice)
+    {
+        <h5>MultipleChoice Options</h5>
+        <button class="btn btn-secondary mb-3" @onclick="AddOption" type="button">+ Add Option</button>
+
+        <ul class="list-group">
+            @for (int i = 0; i < multipleChoiceOptions.Count; i++)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center" @key="i">
+                    <InputText class="form-control me-2" @bind-Value="multipleChoiceOptions[i]" />
+                    <button class="btn btn-danger btn-sm" @onclick="() => RemoveOption(i)" type="button">Remove</button>
+                </li>
+            }
+        </ul>
+    }
+
+
+    <button type="submit">Add Question</button>
+</EditForm>
+
+@code
+{
+    [Parameter]
+    public int FormId { get; set; }
+
+    [Parameter]
+    public EventCallback<FeedbackQuestionDisplayDTO> OnQuestionAdded { get; set; }
+
+    private FeedbackQuestionCreateDTO questionDTO = new();
+    private string errorMessage = string.Empty;
+
+    private List<string> multipleChoiceOptions = new();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        questionDTO.QuestionType = QuestionType.Text;
+    }
+
+    private void AddOption()
+    {
+        multipleChoiceOptions.Add(string.Empty);
+    }
+
+    private void RemoveOption(int index)
+    {
+        if (index >= 0 && index < multipleChoiceOptions.Count)
+        {
+            multipleChoiceOptions.RemoveAt(index);
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            if (questionDTO.QuestionType == QuestionType.MultipleChoice)
+            {
+                questionDTO.MultipleChoiceOptions = JsonConvert.SerializeObject(multipleChoiceOptions);
+            }
+            else
+            {
+                questionDTO.MultipleChoiceOptions = string.Empty;
+            }
+
+            var userId = await UserService.GetCurrentUserIdAsync();
+            if (userId == null)
+            {
+                NavigationManager.NavigateTo("/Account/Login", true);
+                return;
+            }
+
+            await FeedbackCommandService.AddQuestionAsync(FormId, questionDTO, userId.Value);
+
+            var displayDto = new FeedbackQuestionDisplayDTO
+            {
+                QuestionText = questionDTO.QuestionText,
+                QuestionType = questionDTO.QuestionType.ToString()
+            };
+            await OnQuestionAdded.InvokeAsync(displayDto);
+
+            questionDTO = new FeedbackQuestionCreateDTO
+            {
+                QuestionType = Core.Enums.QuestionType.MultipleChoice
+            };
+            multipleChoiceOptions.Clear();
+            errorMessage = string.Empty;
+        }
+        catch (FluentValidation.ValidationException ex)
+        {
+            errorMessage = string.Join("\n", ex.Errors.Select(e => e.ErrorMessage));
+        }
+        catch (ServiceException ex)
+        {
+            errorMessage = "An unexpected error occurred while creating the new feedback question.";
+            Logger.LogError(ex, "Service exception in {Method}.", nameof(HandleValidSubmit));
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+}

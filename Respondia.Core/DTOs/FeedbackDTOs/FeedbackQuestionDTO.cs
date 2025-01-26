@@ -12,7 +12,7 @@ namespace Respondia.Core.DTOs.FeedbackDTOs
         public int Id { get; set; }
         public string QuestionText { get; set; } = string.Empty;
         public QuestionType QuestionType { get; set; }
-        public List<string> MultipleChoiceOptions { get; set; } = new();
+        public string MultipleChoiceOptions { get; set; } = string.Empty;
     }
 }
 

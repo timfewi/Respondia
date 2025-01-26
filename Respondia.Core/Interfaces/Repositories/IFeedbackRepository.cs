@@ -19,6 +19,14 @@ namespace Respondia.Core.Interfaces.Repositories
         /// <returns>A task that represents the asynchronous operation. The task result contains the feedback form with its details if found; otherwise, null.</returns>
         Task<FeedbackForm?> GetFormWithDetailsAsync(int formId);
 
+
+        /// <summary>
+        /// Retrieves a collection of feedback forms associated with a specific campaign asynchronously.
+        /// </summary>
+        /// <param name="campaignId">The unique identifier of the campaign.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a collection of feedback forms associated with the specified campaign.</returns>
+        Task<IEnumerable<FeedbackForm>> GetFeedbackFormsByCampaignAsync(int campaignId);
+
         /// <summary>
         /// Adds a new feedback question to the database asynchronously.
         /// </summary>
