@@ -1,0 +1,199 @@
+﻿@page "/public-feedback/{Token}"
+@attribute [AllowAnonymous]
+
+@using System.ComponentModel.DataAnnotations
+@using Respondia.Core.Interfaces.Services
+@using Respondia.Core.DTOs.FeedbackDTOs
+@using Respondia.Core.Enums
+@using Respondia.Core.Exceptions
+
+@inject IFeedbackQueryService FeedbackQueryService
+@inject IFeedbackCommandService FeedbackCommandService
+@inject NavigationManager NavigationManager
+@inject ILogger<PublicFeedback> Logger
+
+
+<h3>Public Feedback Form</h3>
+
+@if (isLoading)
+{
+    <p>Loading your feedback form...</p>
+}
+else if (isTokenInvalid || feedbackForm == null)
+{
+    <div class="alert alert-danger">
+        The feedback link is invalid or has expired.
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-header">
+            <h5>@feedbackForm.Name</h5>
+        </div>
+        <div class="card-body">
+            <p>@feedbackForm.Description</p>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">
+                    @errorMessage
+                </div>
+            }
+
+            <EditForm Model="@userAnswers" OnValidSubmit="@SubmitAnswers">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                @for (int i = 0; i < feedbackForm.Questions.Count; i++)
+                {
+                    var question = feedbackForm.Questions[i];
+                    var currentAnswer = userAnswers[i];
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            @question.QuestionText
+                        </label>
+
+                        @switch (question.QuestionType)
+                        {
+                            case Respondia.Core.Enums.QuestionType.Text:
+                                <InputTextArea @bind-Value="currentAnswer.Response" class="form-control" />
+                                break;
+
+                            case Respondia.Core.Enums.QuestionType.Rating:
+                                @if (!ratingValues.ContainsKey(question.Id))
+                                {
+                                    ratingValues[question.Id] = 5;
+                                }
+
+                                <input type="range" min="0" max="10" step="1"
+                                       @bind="ratingValues[question.Id]"
+                                       class="form-range" style="width:200px" />
+
+                                <span class="ms-2">@ratingValues[question.Id]</span>
+                                break;
+
+                            case Respondia.Core.Enums.QuestionType.MultipleChoice:
+                                @*
+                                    TODO = MultipleChoiceOptions a checkboxes
+                                *@
+                                break;
+
+                            case Respondia.Core.Enums.QuestionType.YesNo:
+                                <select class="form-select" @bind="currentAnswer.Response">
+                                    <option value="">-- Please Choose --</option>
+                                    <option value="Yes">Yes</option>
+                                    <option value="No">No</option>
+                                </select>
+                                break;
+                        }
+
+
+                        <ValidationMessage For="() => currentAnswer.Response" />
+                    </div>
+                }
+
+                <button type="submit" class="btn btn-primary">
+                    Submit Feedback
+                </button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+
+@code {
+    [Parameter]
+    public string Token { get; set; } = string.Empty;
+
+    private PublicFeedbackFormDTO? feedbackForm;
+
+    private List<FeedbackAnswerCreateDTO> userAnswers = new();
+
+    private bool isLoading = true;
+    private bool isTokenInvalid = false;
+    private string? errorMessage;
+    private Dictionary<int, int> ratingValues = new();
+    private int feedbackFormId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            feedbackForm = await FeedbackQueryService.GetFeedBackFormByTokenAsync(Token);
+
+            if (feedbackForm == null
+                || feedbackForm.ExpiryDate < DateTime.Now
+                || !feedbackForm.IsActive)
+            {
+                isTokenInvalid = true;
+            }
+            else
+            {
+                userAnswers = feedbackForm.Questions
+                .Select(q => new FeedbackAnswerCreateDTO
+                {
+                    QuestionId = q.Id,
+                    Response = string.Empty
+                })
+                .ToList();
+
+                foreach (var q in feedbackForm.Questions
+                    .Where(x => x.QuestionType == Respondia.Core.Enums.QuestionType.Rating))
+                {
+                    ratingValues[q.Id] = 5;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            isTokenInvalid = true;
+            Logger.LogError(ex, "Error loading feedback form in {Method}", nameof(OnParametersSetAsync));
+        }
+        finally
+        {
+            isLoading = false;
+            await base.OnParametersSetAsync();
+        }
+    }
+
+    private async Task SubmitAnswers()
+    {
+        try
+        {
+            foreach (var answerDto in userAnswers)
+            {
+                var question = feedbackForm?.Questions
+                    .FirstOrDefault(q => q.Id == answerDto.QuestionId);
+
+                if (question?.QuestionType
+                    == Respondia.Core.Enums.QuestionType.Rating)
+                {
+                    if (ratingValues.TryGetValue(answerDto.QuestionId, out int rating))
+                    {
+                        answerDto.Response = rating.ToString();
+                    }
+                }
+            }
+
+            await FeedbackCommandService.SubmitFeedbackAnswersAsync(Token, userAnswers);
+          
+            NavigationManager.NavigateTo("/thank-you");
+        }
+        catch (ValidationException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        catch (ServiceException ex)
+        {
+            errorMessage = "An unexpected error occurred while submitting your feedback.";
+            Logger.LogError(ex, "Service exception in {Method}.", nameof(SubmitAnswers));
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "An unexpected error occurred.";
+            Logger.LogError(ex, "Error in SubmitAnswers");
+        }
+    }
+}

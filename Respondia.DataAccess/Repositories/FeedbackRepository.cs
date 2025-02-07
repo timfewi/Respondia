@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.SqlServer.Server;
 using Respondia.Core.Attributes;
 using Respondia.Core.Entities;
 using Respondia.Core.Exceptions;
@@ -11,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -74,7 +76,6 @@ namespace Respondia.DataAccess.Repositories
             try
             {
                 var form = await _forms
-                    .AsNoTracking()
                     .Include(f => f.Campaign)
                     .Include(f => f.FeedbackSummery)
                     .Include(f => f.FeedbackQuestions)
@@ -214,6 +215,7 @@ namespace Respondia.DataAccess.Repositories
                     .Include(f => f.FeedbackSummery)
                     .Include(f => f.FeedbackQuestions)
                         .ThenInclude(q => q.FeedbackAnswers)
+                    .Include(f => f.FeedbackLink)
                     .FirstOrDefaultAsync(f => f.Id == formId && !f.IsDeleted);
 
                 if (form == null)
@@ -326,6 +328,38 @@ namespace Respondia.DataAccess.Repositories
             }
         }
 
+        /// <inheritdoc/>
+        public async Task<IEnumerable<FeedbackQuestion>> GetQuestionsByFeedbackFormIdAsync(int feedbackFormId)
+        {
+            try
+            {
+                var questions = await _questions
+                    .Where(f => f.FeedbackFormId == feedbackFormId && !f.IsDeleted)
+                    .ToListAsync();
+
+                if (questions.Count == 0)
+                {
+                    _logger.LogWarning("No FeedbackQuestions found for FeedbackFormId {FeedbackFormId}.", feedbackFormId);
+                }
+                else
+                {
+                    _logger.LogInformation("Retrieved {Count} FeedbackQuestions for FeedbackFormId {FeedbackFormId}.", questions.Count, feedbackFormId);
+                }
+
+                return questions;
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Invalid operation in {Method}. FeedbackFormId={FeedbackFormId}", nameof(GetQuestionsByFeedbackFormIdAsync), feedbackFormId);
+                throw new DataAccessException($"Error retrieving FeedbackQuestions for FeedbackFormId {feedbackFormId}.", ex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in {Method}: {Message}", nameof(GetQuestionsByFeedbackFormIdAsync), ex.Message);
+                throw new DataAccessException($"Unexpected error in {nameof(GetQuestionsByFeedbackFormIdAsync)}.", ex);
+            }
+        }
+
         #endregion
 
         #region FeedbackAnswer
@@ -412,6 +446,39 @@ namespace Respondia.DataAccess.Repositories
             {
                 _logger.LogError(ex, "Unexpected error in {Method}: {Message}", nameof(AddFeedbackLinkAsync), ex.Message);
                 throw new DataAccessException($"Unexpected error in {nameof(AddFeedbackLinkAsync)}.", ex);
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<FeedbackLink?> GetFeedbackLinkByTokenAsync(string token)
+        {
+            try
+            {
+                var link = await _links
+                    .AsNoTracking()
+                    .Include(f => f.FeedbackForm)
+                    .FirstOrDefaultAsync(f => f.Token == token && !f.IsDeleted);
+
+                if (link == null)
+                {
+                    _logger.LogWarning("FeedbackLink with token {Token} not found.", token);
+                }
+                else
+                {
+                    _logger.LogInformation("Found FeedbackLink with token {Token}.", token);
+                }
+
+                return link;
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Invalid operation in {Method}. Token={Token}", nameof(GetFeedbackLinkByTokenAsync), token);
+                throw new DataAccessException($"Error retrieving FeedbackLink with token {token}.", ex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in {Method}: {Message}", nameof(GetFeedbackLinkByTokenAsync), ex.Message);
+                throw new DataAccessException($"Unexpected error in {nameof(GetFeedbackLinkByTokenAsync)}.", ex);
             }
         }
 

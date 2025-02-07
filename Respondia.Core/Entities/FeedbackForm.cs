@@ -22,9 +22,19 @@ namespace Respondia.Core.Entities
         public string Description { get; set; } = string.Empty;
 
         /// <summary>
+        /// Indicates whether the feedback form is finalized (i.e. no further questions can be added).
+        /// </summary>
+        public bool IsFinalized { get; set; } = false; 
+
+        /// <summary>
         /// Gets or sets the identifier of the associated campaign.
         /// </summary>
         public int CampaignId { get; set; }
+
+        /// <summary>
+        /// Shows the successful Feedbacks submits.
+        /// </summary>
+        public int SubmitCount { get; set; }
 
         /// <summary>
         /// Gets or sets the associated campaign.
@@ -40,5 +50,11 @@ namespace Respondia.Core.Entities
         /// Gets or sets the summary of feedback collected from the form.
         /// </summary>
         public FeedbackSummery FeedbackSummery { get; set; } = default!;
+
+        /// <summary>
+        /// Direct 1:1 Relation to Link 
+        /// </summary>
+        public FeedbackLink? FeedbackLink { get; set; }
+
     }
 }

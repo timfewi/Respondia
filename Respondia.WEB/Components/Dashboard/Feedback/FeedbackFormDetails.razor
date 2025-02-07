@@ -20,6 +20,7 @@ else
         <div class="card-body">
             <h4>@feedbackForm.Name</h4>
             <p>@feedbackForm.Description</p>
+            <p>Successful submits: @feedbackForm.SubmitCount</p>
 
             @if (feedbackForm.Summery != null)
             {
@@ -46,39 +47,48 @@ else
                         <li>
                             <b>@q.QuestionText</b>
                             (<em>@q.QuestionType</em>)
-
-                            @if (q.QuestionType == Core.Enums.QuestionType.MultipleChoice)
-                            {
-                                <ul>
-                                    @foreach (var option in DeserializeOptions(q.MultipleChoiceOptions))
-                                    {
-                                        <li>@option</li>
-                                    }
-                                </ul>
-                            }
                         </li>
                     }
                 </ul>
             }
 
-            <!-- Button zum Hinzufügen weiterer Fragen -->
-            @if (!showAddQuestion)
+        </div>
+    </div>
+}
+
+@if (feedbackForm?.Link is not null)
+{
+    <hr />
+    <div class="card mt-3">
+        <div class="card-header">
+            <h5>Share Feedback Link</h5>
+        </div>
+        <div class="card-body">
+            @* Kompletter Link zusammenbauen *@
+            @if (!string.IsNullOrEmpty(fullLink))
             {
-                <button class="btn btn-primary mt-2" @onclick="ToggleAddQuestion">
-                    + Add Another Question
+                <p><strong>Temporary Link:</strong> @fullLink</p>
+
+                <!-- Copy Button -->
+                <button class="btn btn-outline-secondary" @onclick="CopyLinkToClipboard">
+                    <i class="bi bi-clipboard"></i> Copy Link
+                </button>
+
+                <!-- Optional: Mailto-Link -->
+                <button class="btn btn-outline-primary ms-2" @onclick="OpenMailToLink">
+                    <i class="bi bi-envelope"></i> Share via Email
                 </button>
             }
             else
             {
-                <FeedbackQuestionAdd FormId="@FormId"
-                                     OnQuestionAdded="@OnQuestionAdded" />
-
-                <button class="btn btn-outline-secondary mt-2" @onclick="ToggleAddQuestion">
-                    Close
-                </button>
+                <p>No valid link found.</p>
             }
         </div>
     </div>
+}
+else
+{
+    <p>This feedback form has no generated link yet.</p>
 }
 
 @if (!string.IsNullOrEmpty(errorMessage))
@@ -86,14 +96,26 @@ else
     <p style="color:red">@errorMessage</p>
 }
 
+@if (!string.IsNullOrEmpty(copyMessage))
+{
+    <div class="alert alert-success mt-2">
+        @copyMessage
+    </div>
+}
+
+
 @code {
     [Parameter]
     public int FormId { get; set; }
 
+    [Inject]
+    private IJSRuntime JSRuntime { get; set; } = default!;
+
     private FeedbackFormDetailsDTO? feedbackForm;
     private bool isLoading = true;
     private string errorMessage = string.Empty;
-    private bool showAddQuestion = false;
+    private string? fullLink;
+    private string copyMessage = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -106,6 +128,13 @@ else
                 return;
             }
             feedbackForm = await FeedbackQueryService.GetFeedbackFormDetailsAsync(FormId);
+            if (feedbackForm?.Link != null)
+            {
+                fullLink = NavigationManager.BaseUri
+                    + "public-feedback/"
+                    + feedbackForm.Link.Token;
+            }
+
         }
         catch (ServiceException ex)
         {
@@ -118,39 +147,24 @@ else
         }
     }
 
-    private List<string> DeserializeOptions(string json)
+    private async Task CopyLinkToClipboard()
     {
-        if (string.IsNullOrWhiteSpace(json))
-            return new();
-        try
+        if (!string.IsNullOrEmpty(fullLink))
         {
-            return JsonConvert.DeserializeObject<List<string>>(json) ?? new List<string>();
-        }
-        catch
-        {
-            return new();
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", fullLink);
+            copyMessage = "Link copied to clipboard!";
         }
     }
 
-    private void ToggleAddQuestion()
-    {
-        showAddQuestion = !showAddQuestion;
-    }
 
-    private void OnQuestionAdded(FeedbackQuestionDisplayDTO newQuestion)
+    private void OpenMailToLink()
     {
-        if (feedbackForm?.Questions != null)
+        if (!string.IsNullOrEmpty(fullLink))
         {
-            feedbackForm.Questions.Add(new FeedbackQuestionDTO
-            {
-                QuestionText = newQuestion.QuestionText,
-                QuestionType = Enum.Parse<QuestionType>(newQuestion.QuestionType),
-                MultipleChoiceOptions = ""
-            });
-
+            var subject = Uri.EscapeDataString("Check out this feedback form");
+            var body = Uri.EscapeDataString($"Hello,\n\nPlease fill out this feedback form:\n{fullLink}");
+            var mailtoUrl = $"mailto:?subject={subject}&body={body}";
+            NavigationManager.NavigateTo(mailtoUrl);
         }
-
-        StateHasChanged();
     }
-
 }

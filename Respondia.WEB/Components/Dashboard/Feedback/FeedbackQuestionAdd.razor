@@ -15,19 +15,21 @@
     <div>
         <label>Question Text:</label>
         <InputText @bind-Value="questionDTO.QuestionText" />
+        <ValidationMessage For="() => questionDTO.QuestionText" class="text-danger" />
     </div>
     <div>
         <label>Type:</label>
         <InputSelect class="form-select" @bind-Value="questionDTO.QuestionType">
             <option value="">-- Select Type --</option>
             <option value="@QuestionType.Text">Text</option>
-            <option value="@QuestionType.MultipleChoice">MultipleChoice</option>
+            @*<option value="@QuestionType.MultipleChoice">MultipleChoice</option>*@
             <option value="@QuestionType.Rating">Rating</option>
             <option value="@QuestionType.YesNo">Yes or No</option>
         </InputSelect>
+        <ValidationMessage For="() => questionDTO.QuestionType" class="text-danger" />
     </div>
 
-    @if (questionDTO.QuestionType == QuestionType.MultipleChoice)
+    @*@if (questionDTO.QuestionType == QuestionType.MultipleChoice)
     {
         <h5>MultipleChoice Options</h5>
         <button class="btn btn-secondary mb-3" @onclick="AddOption" type="button">+ Add Option</button>
@@ -41,7 +43,7 @@
                 </li>
             }
         </ul>
-    }
+    }*@
 
 
     <button type="submit">Add Question</button>

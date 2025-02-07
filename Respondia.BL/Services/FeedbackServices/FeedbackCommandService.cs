@@ -60,7 +60,8 @@ namespace Respondia.BL.Services.FeedbackServices
                 form.CampaignId = dto.CampaignId;
 
                 await _feedbackRepo.AddAsync(form);
-                await _unitOfWork.CompleteAsync(); ;
+                await _unitOfWork.CompleteAsync();
+                ;
                 _logger.LogInformation("FeedbackForm with Id {FormId} created by user {UserId}.", form.Id, userId);
                 return form.Id;
             }
@@ -93,6 +94,12 @@ namespace Respondia.BL.Services.FeedbackServices
                     throw new KeyNotFoundException($"FeedbackForm with ID {formId} not found.");
                 }
 
+                if (form.IsFinalized)
+                {
+                    _logger.LogError("Cannot add a question because the feedback form has been finalized.");
+                    throw new ServiceException("Cannot add a question because the feedback form has been finalized.");
+                }
+
                 var question = _mapper.Map<FeedbackQuestion>(questionDto);
                 question.FeedbackFormId = formId;
 
@@ -105,7 +112,7 @@ namespace Respondia.BL.Services.FeedbackServices
             {
                 _logger.LogError(ex, "Error adding question to form. Method: {Method}", nameof(AddQuestionAsync));
                 throw new ServiceException("Unexpected error while adding question.", ex);
-            } 
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error adding question to form. Method: {Method}", nameof(AddQuestionAsync));
@@ -113,11 +120,104 @@ namespace Respondia.BL.Services.FeedbackServices
             }
         }
 
+        /// <inheritdoc/>
+        public async Task<FeedbackLinkDTO> FinalizeFormGenerateFeedbackLinkAsync(int formId, DateTime expiryDate, int userId)
+        {
+            try
+            {
+                var form = await _feedbackRepo.GetByIdAsync(formId);
+                if (form == null)
+                {
+                    throw new KeyNotFoundException($"FeedbackForm with ID {formId} not found.");
+                }
+
+                if (form.IsFinalized)
+                {
+                    _logger.LogError($"The feedback form with ID: {formId} has already been finalized.");
+                    throw new ServiceException("The feedback form has already been finalized.");
+                }
+
+                var feedbackLink = new FeedbackLink
+                {
+                    FeedbackFormId = formId,
+                    ExpiryDate = expiryDate,
+                    IsActive = true,
+                    Token = Guid.NewGuid().ToString()
+                };
+
+                form.FeedbackLink = feedbackLink;
+                form.IsFinalized = true;
+
+                await _feedbackRepo.AddFeedbackLinkAsync(feedbackLink);
+                await _unitOfWork.CompleteAsync();
+                _logger.LogInformation("FeedbackForm with Id {FormId} finalized by user {UserId}.", formId, userId);
+
+                var feedbackLinkDTO = _mapper.Map<FeedbackLinkDTO>(feedbackLink);
+                return feedbackLinkDTO;
+            }
+            catch (DataAccessException ex)
+            {
+                _logger.LogError(ex, "Error finalizing feedback form. Method: {Method}", nameof(FinalizeFormGenerateFeedbackLinkAsync));
+                throw new ServiceException("Unexpected error while finalizing feedback form.", ex);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error finalizing feedback form. Method: {Method}", nameof(FinalizeFormGenerateFeedbackLinkAsync));
+                throw new ServiceException("Unexpected error while finalizing feedback form.", ex);
+            }
+        }
 
         /// <inheritdoc/>
-        public Task<FeedbackLinkDTO> GenerateFeedbackLinkAsync(int formId, DateTime expiryDate, int userId)
+        public async Task SubmitFeedbackAnswersAsync(string token, List<FeedbackAnswerCreateDTO> answers)
         {
-            throw new NotImplementedException();
+            //var validatorResult = _feedbackQuestionCreateValidator.Validate(answers);
+            //if (!validatorResult.IsValid)
+            //{
+            //    throw new ValidationException(validatorResult.Errors);
+            //}
+
+            var feedbackLink = await _feedbackRepo.GetFeedbackLinkByTokenAsync(token);
+            if (feedbackLink == null)
+            {
+                throw new ServiceException("Invalid token.");
+            }
+            if (feedbackLink.ExpiryDate < DateTime.Now || !feedbackLink.IsActive)
+            {
+                throw new ServiceException("Feedback link has expired or is not active.");
+            }
+
+            var questions = await _feedbackRepo.GetQuestionsByFeedbackFormIdAsync(feedbackLink.FeedbackFormId);
+            var validQuestionIds = questions.Select(q => q.Id).ToHashSet();
+
+            foreach (var answerDTO in answers)
+            {
+
+                if (!validQuestionIds.Contains(answerDTO.QuestionId))
+                {
+                    throw new ServiceException($"QuestionId {answerDTO.QuestionId} is invalid for this form.");
+                }
+
+                var feedbackAnswer = new FeedbackAnswer
+                {
+                    FeedbackQuestionId = answerDTO.QuestionId,
+                    Response = answerDTO.Response,
+                    SubmittedDate = DateTime.Now,
+                    UserIdentifier = "public-user"
+                };
+
+                await _feedbackRepo.AddAnswerAsync(feedbackAnswer);
+            }
+
+            var feedbackForm = await _feedbackRepo.GetByIdAsync(feedbackLink.FeedbackFormId);
+            if (feedbackForm == null)
+            {
+                throw new ServiceException($"FeedbackForm with ID {feedbackLink.FeedbackFormId} not found.");
+            }
+
+            feedbackForm.SubmitCount += 1;
+
+            await _unitOfWork.CompleteAsync();
+
         }
     }
 }

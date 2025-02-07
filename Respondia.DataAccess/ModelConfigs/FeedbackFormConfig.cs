@@ -33,6 +33,11 @@ namespace Respondia.DataAccess.ModelConfigs
                    .WithOne(fs => fs.FeedbackForm)
                    .HasForeignKey<FeedbackSummery>(fs => fs.FeedbackFormId)
                    .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(f => f.FeedbackLink)
+                   .WithOne(fl => fl.FeedbackForm)
+                   .HasForeignKey<FeedbackLink>(fl => fl.FeedbackFormId)
+                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

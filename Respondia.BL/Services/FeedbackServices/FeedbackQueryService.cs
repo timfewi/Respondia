@@ -85,6 +85,45 @@ namespace Respondia.BL.Services.FeedbackServices
             throw new NotImplementedException();
         }
 
+        
+        /// <inheritdoc/>
+        public async Task<PublicFeedbackFormDTO> GetFeedBackFormByTokenAsync(string token)
+        {
+            var feedbackLink = await _feedbackRepo.GetFeedbackLinkByTokenAsync(token);
+            if (feedbackLink == null)
+            {
+                throw new KeyNotFoundException($"{nameof(GetFeedBackFormByTokenAsync)} - Link not found.");
+            }
 
+            if (feedbackLink.ExpiryDate < DateTime.Now || !feedbackLink.IsActive)
+            {
+                throw new ServiceException("Token expired.");
+            }
+
+            var form = await _feedbackRepo.GetByIdAsync(feedbackLink.FeedbackFormId);
+            if (form == null)
+            {
+                throw new KeyNotFoundException("Feedback form not found.");
+            }
+
+            var question = await _feedbackRepo.GetQuestionsByFeedbackFormIdAsync(form.Id);
+
+            var dto = new PublicFeedbackFormDTO
+            {
+                Id = form.Id,
+                Name = form.Name,
+                Description = form.Description,
+                IsActive = feedbackLink.IsActive,
+                ExpiryDate = feedbackLink.ExpiryDate,
+                Questions = question.Select(q => new FeedbackQuestionDTO
+                {
+                    Id = q.Id,
+                    QuestionText = q.QuestionText,
+                    QuestionType = q.QuestionType
+                })
+                .ToList()
+            };
+            return dto;
+        }
     }
 }

@@ -1,0 +1,35 @@
+﻿@page "/thank-you"
+@attribute [AllowAnonymous]
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 text-center">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h1 class="display-5">Thank You!</h1>
+                    <p class="lead">We appreciate your feedback.</p>
+                    <hr />
+                    <p>
+                        Your response has been recorded.
+                        If you'd like to provide more feedback or view other forms,
+                        you can click the button below to return to the home page.
+                    </p>
+
+                    <button class="btn btn-primary" @onclick="GoHome">
+                        Go to Home
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Inject]
+    private NavigationManager NavigationManager { get; set; } = default!;
+
+    private void GoHome()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+}

@@ -19,7 +19,6 @@ namespace Respondia.Core.Interfaces.Repositories
         /// <returns>A task that represents the asynchronous operation. The task result contains the feedback form with its details if found; otherwise, null.</returns>
         Task<FeedbackForm?> GetFormWithDetailsAsync(int formId);
 
-
         /// <summary>
         /// Retrieves a collection of feedback forms associated with a specific campaign asynchronously.
         /// </summary>
@@ -42,6 +41,13 @@ namespace Respondia.Core.Interfaces.Repositories
         Task<FeedbackQuestion?> GetQuestionWithAnswersAsync(int questionId);
 
         /// <summary>
+        /// Retrieves a collection of feedback questions associated with a specific feedback form asynchronously.
+        /// </summary>
+        /// <param name="feedbackFormId">The unique identifier of the feedback form.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains a collection of feedback questions associated with the specified feedback form.</returns>
+        Task<IEnumerable<FeedbackQuestion>> GetQuestionsByFeedbackFormIdAsync(int feedbackFormId);
+
+        /// <summary>
         /// Adds a new feedback answer to the database asynchronously.
         /// </summary>
         /// <param name="answer">The feedback answer to add.</param>
@@ -61,5 +67,12 @@ namespace Respondia.Core.Interfaces.Repositories
         /// <param name="feedbackLink">The feedback link to add.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         Task AddFeedbackLinkAsync(FeedbackLink feedbackLink);
+
+        /// <summary>
+        /// Retrieves a feedback link by its unique token asynchronously.
+        /// </summary>
+        /// <param name="token">The unique token of the feedback link.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the feedback link if found; otherwise, null.</returns>
+        Task<FeedbackLink?> GetFeedbackLinkByTokenAsync(string token);
     }
 }

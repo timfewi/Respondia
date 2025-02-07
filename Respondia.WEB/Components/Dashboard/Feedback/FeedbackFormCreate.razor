@@ -17,10 +17,12 @@
         <div class="mb-3">
             <label class="form-label">Name:</label>
             <InputText @bind-Value="formDTO.Name" class="form-control" />
+            <ValidationMessage For="() => formDTO.Name" class="text-danger" />
         </div>
         <div class="mb-3">
             <label class="form-label">Description:</label>
             <InputTextArea @bind-Value="formDTO.Description" class="form-control" />
+            <ValidationMessage For="() => formDTO.Description" class="text-danger" />
         </div>
         <input type="hidden" @bind="formDTO.CampaignId" />
 
@@ -29,27 +31,85 @@
 }
 else
 {
-    <h4>Feedback Form created (ID: @createdFormId)</h4>
-    <p>You can now add questions:</p>
+    <!-- Form Created and Questions Section -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-header">
+            <h5>Feedback Form (ID: @createdFormId) Created</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-3">Now you can add questions:</p>
 
-    <div>
-        @foreach (var question in addedQuestions)
-        {
-            <div style="border:1px solid #ccc; margin:5px; padding:5px;">
-                <b>@question.QuestionText</b> (Type: @question.QuestionType)
+            @if (addedQuestions.Any())
+            {
+                <ul class="list-group mb-3">
+                    @foreach (var question in addedQuestions)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <strong>@question.QuestionText</strong>
+                                <span class="badge bg-secondary ms-2">@question.QuestionType</span>
+                            </span>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="alert alert-info">No questions added yet.</div>
+            }
+
+            <div class="mb-3">
+                <button class="btn btn-outline-primary me-2" @onclick="ToggleAddQuestion">
+                    @(showAddQuestion ? "Close Add Question" : "Add Question")
+                </button>
+                @if (showAddQuestion)
+                {
+                    <div class="mt-3">
+                        <!-- Component for Adding Questions -->
+                        <FeedbackQuestionAdd FormId="@createdFormId" OnQuestionAdded="@OnQuestionAdded" />
+                    </div>
+                }
             </div>
-        }
+
+            <hr />
+
+            @if (!isFormFinalized)
+            {
+                <div class="d-grid gap-2">
+                    <button class="btn btn-success" @onclick="FinalizeForm" disabled="@isFinalizing">
+                        @if (isFinalizing)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <p>Finalizing Form...</p>
+                                    }
+                        else
+                        {
+                            <p>Finalize Form and Generate Link</p>
+                        }
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info mt-3">
+                    <h6>The form has been finalized.</h6>
+                    <p>
+                        Your feedback link:
+                        <a href="@feedbackLink" target="_blank">@feedbackLink</a>
+                    </p>
+                    <p>
+                        This link leads to a temporary page displaying the formatted feedback form with the questions in the order you added them.
+                    </p>
+                </div>
+            }
+
+            <div class="mt-3">
+                <button class="btn btn-primary" @onclick="NavigateToDetails">
+                    Go to Details
+                </button>
+            </div>
+        </div>
     </div>
-
-    <FeedbackQuestionAdd FormId="@createdFormId"
-                         OnQuestionAdded="@OnQuestionAdded" />
-
-    <div style="margin-top:20px">
-        <button @onclick='() => NavigationManager.NavigateTo($"/feedback/details/{createdFormId}")'>
-            Go to Details
-        </button>
-    </div>
-
 }
 
 @if (!string.IsNullOrEmpty(errorMessage))
@@ -65,15 +125,18 @@ else
     private FeedbackFormCreateDTO formDTO = new();
     private bool isFormCreated = false;
     private int createdFormId = 0;
+    private bool isFormFinalized = false;
+    private bool showAddQuestion = false;
+    private bool isFinalizing = false;
+    private string feedbackLink = string.Empty;
     private string errorMessage = string.Empty;
 
     private List<FeedbackQuestionDisplayDTO> addedQuestions = new();
 
-    private bool isSaving = false;
 
     private async Task HandleCreateForm()
     {
-        isSaving = true;
+        isFinalizing = true;
         errorMessage = string.Empty;
         try
         {
@@ -96,14 +159,20 @@ else
             errorMessage = "An unexpected error occurred while creating the new feedback form.";
             Logger.LogError(ex, "Service exception in {Method}.", nameof(HandleCreateForm));
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             errorMessage = "An unexpected error occurred.";
+            Logger.LogError(ex, "Error in HandleCreateForm");
         }
         finally
         {
-            isSaving = false;
+            isFinalizing = false;
         }
+    }
+
+    private void ToggleAddQuestion()
+    {
+        showAddQuestion = !showAddQuestion;
     }
 
     protected override void OnParametersSet()
@@ -116,6 +185,41 @@ else
     {
         addedQuestions.Add(question);
         StateHasChanged();
+    }
+
+    private async Task FinalizeForm()
+    {
+        isFinalizing = true;
+        errorMessage = string.Empty;
+        try
+        {
+            var userId = await UserService.GetCurrentUserIdAsync();
+            if(userId == null)
+            {
+                NavigationManager.NavigateTo("/Account/Login", true);
+                return;
+            }
+            var actualUserId = userId ?? 0;
+            var expiryDate = DateTime.Now.AddDays(30);
+            var linkDTO = await FeedbackCommandService.FinalizeFormGenerateFeedbackLinkAsync(createdFormId, expiryDate, actualUserId);
+
+            feedbackLink = $"{NavigationManager.BaseUri}public-feedback/{linkDTO.Token}";
+            isFormFinalized = true;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error finalizing the form: " + ex.Message;
+            Logger.LogError(ex, "Error in FinalizeForm");
+        }
+        finally
+        {
+            isFinalizing = false;
+        }
+    }
+
+    private void NavigateToDetails()
+    {
+        NavigationManager.NavigateTo($"/feedback/details/{createdFormId}");
     }
 
 }

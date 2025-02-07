@@ -343,6 +343,9 @@ namespace Respondia.DataAccess.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
+                    b.Property<bool>("IsFinalized")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -354,11 +357,58 @@ namespace Respondia.DataAccess.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
+                    b.Property<int>("SubmitCount")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CampaignId");
 
                     b.ToTable("FeedbackForms", (string)null);
+                });
+
+            modelBuilder.Entity("Respondia.Core.Entities.FeedbackLink", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("DateCreated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateUpdated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FeedbackFormId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FeedbackFormId")
+                        .IsUnique();
+
+                    b.ToTable("FeedbackLink");
                 });
 
             modelBuilder.Entity("Respondia.Core.Entities.FeedbackQuestion", b =>
@@ -577,6 +627,17 @@ namespace Respondia.DataAccess.Migrations
                     b.Navigation("Campaign");
                 });
 
+            modelBuilder.Entity("Respondia.Core.Entities.FeedbackLink", b =>
+                {
+                    b.HasOne("Respondia.Core.Entities.FeedbackForm", "FeedbackForm")
+                        .WithOne("FeedbackLink")
+                        .HasForeignKey("Respondia.Core.Entities.FeedbackLink", "FeedbackFormId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FeedbackForm");
+                });
+
             modelBuilder.Entity("Respondia.Core.Entities.FeedbackQuestion", b =>
                 {
                     b.HasOne("Respondia.Core.Entities.FeedbackForm", "FeedbackForm")
@@ -614,6 +675,8 @@ namespace Respondia.DataAccess.Migrations
 
             modelBuilder.Entity("Respondia.Core.Entities.FeedbackForm", b =>
                 {
+                    b.Navigation("FeedbackLink");
+
                     b.Navigation("FeedbackQuestions");
 
                     b.Navigation("FeedbackSummery")

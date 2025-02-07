@@ -27,7 +27,8 @@ namespace Respondia.BL.Mapping
             // FeedbackForm -> FeedbackFormDetailsDTO
             CreateMap<FeedbackForm, FeedbackFormDetailsDTO>()
                .ForMember(dest => dest.Summery, opt => opt.MapFrom(src => src.FeedbackSummery))
-               .ForMember(dest => dest.Questions, opt => opt.MapFrom(src => src.FeedbackQuestions));
+               .ForMember(dest => dest.Questions, opt => opt.MapFrom(src => src.FeedbackQuestions))
+               .ForMember(dest => dest.Link, opt => opt.MapFrom(src => src.FeedbackLink));
 
             // FeedbackQuestionCreateDTO -> FeedbackQuestion
             CreateMap<FeedbackQuestionCreateDTO, FeedbackQuestion>()
@@ -39,6 +40,9 @@ namespace Respondia.BL.Mapping
 
             // FeedbackQuestion -> FeedbackQuestionDTO
             CreateMap<FeedbackQuestion, FeedbackQuestionDTO>();
+
+            // FeedbackLink -> FeedbackLinkDTO
+            CreateMap<FeedbackLink, FeedbackLinkDTO>();
         }
     }
 }

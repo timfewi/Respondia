@@ -26,13 +26,20 @@ namespace Respondia.Core.Interfaces.Services
         Task AddQuestionAsync(int formId, FeedbackQuestionCreateDTO questionDto, int userId);
 
         /// <summary>
-        /// Generates a link to fill out the form and saves it in the database.
+        /// Finalizes the feedback form and generates a link to fill out the form and saves it in the database.
         /// </summary>
         /// <param name="formId">ID of the form.</param>
         /// <param name="expiryDate">Expiration date of the link.</param>
         /// <param name="userId">ID of the user creating the link.</param>
         /// <returns>A DTO containing the token, expiration date, etc.</returns>
-        Task<FeedbackLinkDTO> GenerateFeedbackLinkAsync(int formId, DateTime expiryDate, int userId);
+        Task<FeedbackLinkDTO> FinalizeFormGenerateFeedbackLinkAsync(int formId, DateTime expiryDate, int userId);
+
+        /// <summary>
+        /// Submits feedback answers for a given token.
+        /// </summary>
+        /// <param name="token">Token associated with the feedback form.</param>
+        /// <param name="answers">List of answers to be submitted.</param>
+        Task SubmitFeedbackAnswersAsync(string token, List<FeedbackAnswerCreateDTO> answers);
     }
 
 }

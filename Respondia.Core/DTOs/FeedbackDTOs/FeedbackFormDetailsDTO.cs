@@ -11,8 +11,9 @@ namespace Respondia.Core.DTOs.FeedbackDTOs
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
+        public int? SubmitCount { get; set; }
         public FeedbackSummeryDTO? Summery { get; set; }
         public List<FeedbackQuestionDTO>? Questions { get; set; } = new();
-
+        public FeedbackLinkDTO? Link { get; set; }
     }
 }

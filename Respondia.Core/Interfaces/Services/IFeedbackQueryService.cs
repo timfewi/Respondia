@@ -17,6 +17,15 @@ namespace Respondia.Core.Interfaces.Services
         Task<IEnumerable<FeedbackFormOverviewDTO>> GetFeedbackFormsAsync(int campaignId);
 
         /// <summary>
+        /// Retrieves a public feedback form by its unique token.
+        /// </summary>
+        /// <param name="token">The unique token of the feedback form.</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the public feedback form DTO.</returns>
+        /// <exception cref="KeyNotFoundException">Thrown when the feedback link or form is not found.</exception>
+        /// <exception cref="ServiceException">Thrown when the token is expired or any other service error occurs.</exception>
+        Task<PublicFeedbackFormDTO> GetFeedBackFormByTokenAsync(string token);
+
+        /// <summary>
         /// Retrieves the detailed information of a feedback form, including questions and summary.
         /// </summary>
         /// <param name="formId">The ID of the feedback form.</param>
